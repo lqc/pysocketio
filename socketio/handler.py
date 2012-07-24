@@ -52,14 +52,14 @@ class SocketIOHandler(WebSocketHandler):
         ])
         self.result = ['io.j[%s]("%s");' % (wrapper, data)]
 
-    def write_plain_result(self, data, status="200 OK"):
+    def write_plain_result(self, data):
         headers = [("Content-Type", "text/plain")]
         if self.server.cors_domain:
             headers += [
                 ("Access-Control-Allow-Origin", self.server.cors_domain),
                 ("Access-Control-Allow-Credentials", "true"),
             ]
-        self.start_response(status, headers)
+        self.start_response("200 OK", headers)
         self.result = [data]
 
     def write_smart(self, data):
@@ -107,7 +107,14 @@ class SocketIOHandler(WebSocketHandler):
         session = self.server.get_session(session_id)
         if session is None:
             logger.warning("Connection from dead session: %s", session_id)
-            self.write_plain_result("", "404 Session not found")
+            headers = [("Content-Type", "text/plain")]
+            if self.server.cors_domain:
+                headers += [
+                    ("Access-Control-Allow-Origin", self.server.cors_domain),
+                    ("Access-Control-Allow-Credentials", "true"),
+                ]
+            self.start_response("404 Session not found", headers)
+            self.result = [""]
             self.process_result()
             return
         logger.debug("Connection for session %r, transport %r", session.session_id, transport)

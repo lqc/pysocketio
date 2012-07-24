@@ -52,14 +52,14 @@ class SocketIOHandler(WebSocketHandler):
         ])
         self.result = ['io.j[%s]("%s");' % (wrapper, data)]
 
-    def write_plain_result(self, data):
+    def write_plain_result(self, data, status="200 OK"):
         headers = [("Content-Type", "text/plain")]
         if self.server.cors_domain:
             headers += [
                 ("Access-Control-Allow-Origin", self.server.cors_domain),
                 ("Access-Control-Allow-Credentials", "true"),
             ]
-        self.start_response("200 OK", headers)
+        self.start_response(status, headers)
         self.result = [data]
 
     def write_smart(self, data):
@@ -105,7 +105,12 @@ class SocketIOHandler(WebSocketHandler):
         transport = self.handler_types.get(request_tokens["transport_id"])
         session_id = request_tokens["session_id"]
         session = self.server.get_session(session_id)
-        logger.debug("Handshake for session %r, transport %r", session.session_id, transport)
+        if session is None:
+            logger.warning("Connection from dead session: %s", session_id)
+            self.write_plain_result("", "404 Session not found")
+            self.process_result()
+            return
+        logger.debug("Connection for session %r, transport %r", session.session_id, transport)
 
         # Make the session object available for WSGI apps
         self.environ['socketio'] = protocol.PySocketProtocol(session)

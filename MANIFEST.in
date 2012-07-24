@@ -1,5 +1,6 @@
-recursive-include examples *
-recursive-include socketio *
+recursive-include examples *.py *.js *.html *.css
+recursive-include socketio *.py
 include LICENSE
 include AUTHORS
 include MANIFEST.in
+include README.rst
